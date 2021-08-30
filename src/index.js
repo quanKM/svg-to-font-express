@@ -5,10 +5,9 @@ import fs from 'fs'
 import * as path from 'path'
 import svgtofont from 'svgtofont'
 import fsExtra from 'fs-extra'
-import { svg2png } from 'svg-png-converter'
-import archiver from 'archiver'
+import { png2svg } from 'svg-png-converter'
+
 const app = express()
-import AdmZip from 'adm-zip'
 app.use(cors())
 app.use(express.static('public/fonts'))
 
@@ -47,37 +46,42 @@ app.post('/', upload.array('files'), async (req, res) => {
 
 app.post('/png', upload.array('files'), async (req, res) => {
   const filePath = req.files[0].destination
-  const dicFolder = `./public/png/${req.files[0].destination.split('/')[3]}`
+  const dicFolder = `./public/svg/${req.files[0].destination.split('/')[3]}`
 
   fs.mkdirSync(dicFolder, { recursive: true })
   try {
     const files = await fs.promises.readdir(filePath)
     for (const file of files) {
-      let outputBuffer = await svg2png({
+      let outputBuffer = await png2svg({
         input: fs.readFileSync(`${filePath}/${file}`),
-        encoding: 'buffer',
-        format: 'png',
+        tracer: 'potrace',
+        optimize: true,
+        numberofcolors: 24,
+        pathomit: 1,
       })
 
       await fs.promises.writeFile(
-        `${dicFolder}/${file.split('.')[0]}.png`,
-        outputBuffer
+        `${dicFolder}/${file.split('.')[0]}.svg`,
+        outputBuffer.content
       )
     }
-
-    var zip = new AdmZip()
-    zip.addLocalFolder(dicFolder)
-    const file_after_download = `${req.files[0].destination.split('/')[3]}.zip`
-
-    const data = zip.toBuffer()
-    res.set('Content-Type', 'application/octet-stream')
-    res.set(
-      'Content-Disposition',
-      `attachment; filename=${file_after_download}`
-    )
-    res.set('Content-Length', data.length)
-    fsExtra.emptyDirSync('./public')
-    res.send(data)
+    await svgtofont({
+      src: path.resolve(process.cwd(), dicFolder),
+      dist: path.resolve(
+        process.cwd(),
+        `./public/fonts/${req.files[0].destination.split('/')[3]}`
+      ),
+      emptyDist: true,
+      startUnicode: 0x0061,
+      fontName: 'font',
+      css: false,
+    })
+    const file = `./public/fonts/${
+      req.files[0].destination.split('/')[3]
+    }/font.ttf`
+    res.download(file, 'font.ttf', function (err) {
+      fsExtra.emptyDirSync('./public')
+    })
   } catch (error) {
     console.log(error)
   }

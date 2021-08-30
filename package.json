@@ -15,6 +15,7 @@
     "multer": "^1.4.3",
     "nodemon": "^2.0.12",
     "svg-png-converter": "^0.0.9",
+    "svg-to-png": "^4.0.0",
     "svgtofont": "^3.12.2"
   },
   "scripts": {
