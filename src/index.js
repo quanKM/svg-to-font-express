@@ -33,7 +33,7 @@ app.post('/', upload.array('files'), async (req, res) => {
       `./public/fonts/${req.files[0].destination.split('/')[3]}`
     ), // output path
     emptyDist: true,
-    startUnicode: 0x0061,
+    // startUnicode: 0x0061,
     fontName: 'font',
     css: false,
   })
@@ -113,7 +113,7 @@ app.post('/png', upload.array('files'), async (req, res) => {
         `./public/fonts/${req.files[0].destination.split('/')[3]}`
       ),
       emptyDist: true,
-      startUnicode: 0x0061,
+      // startUnicode: 0x0061,
       fontName: 'font',
       css: false,
     })
