@@ -23,34 +23,63 @@ const storage = multer.diskStorage({
     callback(null, file.originalname)
   },
 })
-const upload = multer({ storage: storage })
 
-app.post('/', upload.array('files'), async (req, res) => {
-  await svgtofont({
-    src: path.resolve(process.cwd(), req.files[0].destination), // svg path
-    dist: path.resolve(
-      process.cwd(),
-      `./public/fonts/${req.files[0].destination.split('/')[3]}`
-    ), // output path
-    emptyDist: true,
-    // startUnicode: 0x0061,
-    fontName: 'font',
-    css: false,
-  })
-  const file = `./public/fonts/${
-    req.files[0].destination.split('/')[3]
-  }/font.ttf`
-  res.download(file, 'font.ttf', function (err) {
-    fsExtra.emptyDirSync('./public')
-  })
+const uploadSvg = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype == 'image/svg+xml') {
+      cb(null, true)
+    } else {
+      cb(null, false)
+      return cb(new Error('Only .svg format allowed!'))
+    }
+  },
 })
 
-app.post('/png', upload.array('files'), async (req, res) => {
-  const filePath = req.files[0].destination
-  const dicFolder = `./public/svg/${req.files[0].destination.split('/')[3]}`
+const uploadPng = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype == 'image/png') {
+      cb(null, true)
+    } else {
+      cb(null, false)
+      return cb(new Error('Only .png format allowed!'))
+    }
+  },
+})
 
-  fs.mkdirSync(dicFolder, { recursive: true })
+app.post('/', uploadSvg.array('files'), async (req, res) => {
   try {
+    await svgtofont({
+      src: path.resolve(process.cwd(), req.files[0].destination), // svg path
+      dist: path.resolve(
+        process.cwd(),
+        `./public/fonts/${req.files[0].destination.split('/')[3]}`
+      ), // output path
+      emptyDist: true,
+      startUnicode: 0x0020,
+      fontName: 'font',
+      css: false,
+    })
+    const file = `./public/fonts/${
+      req.files[0].destination.split('/')[3]
+    }/font.ttf`
+    res.download(file, 'font.ttf', function (err) {
+      fsExtra.emptyDirSync('./public')
+    })
+  } catch (error) {
+    res.status(500).json({
+      message: 'Something went wrong',
+    })
+  }
+})
+
+app.post('/png', uploadPng.array('files'), async (req, res) => {
+  try {
+    const filePath = req.files[0].destination
+    const dicFolder = `./public/svg/${req.files[0].destination.split('/')[3]}`
+
+    fs.mkdirSync(dicFolder, { recursive: true })
     const files = await fs.promises.readdir(filePath)
     for (const file of files) {
       let outputBuffer = await png2svg({
@@ -113,7 +142,7 @@ app.post('/png', upload.array('files'), async (req, res) => {
         `./public/fonts/${req.files[0].destination.split('/')[3]}`
       ),
       emptyDist: true,
-      // startUnicode: 0x0061,
+      startUnicode: 0x0020,
       fontName: 'font',
       css: false,
     })
@@ -123,8 +152,10 @@ app.post('/png', upload.array('files'), async (req, res) => {
     res.download(file, 'font.ttf', function (err) {
       fsExtra.emptyDirSync('./public')
     })
-  } catch (error) {
-    console.log(error)
+  } catch (e) {
+    res.status(500).json({
+      message: 'Something went wrong',
+    })
   }
 })
 
