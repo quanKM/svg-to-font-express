@@ -14,13 +14,15 @@
     "http-proxy-middleware": "^2.0.0",
     "multer": "^1.4.3",
     "nodemon": "^2.0.12",
+    "potrace": "^2.1.8",
     "svg-png-converter": "^0.0.9",
     "svg-to-png": "^4.0.0",
+    "svgo": "^2.5.0",
     "svgtofont": "^3.12.2"
   },
   "scripts": {
     "start": "node -r esm src/index.js",
-    "watch": "nodemon =r esm src/index.js",
+    "watch": "nodemon  src/index.js",
     "font": "svgtofont --sources ./uploads --output ./aaaa --fontName uiw-font"
   }
 }

@@ -6,6 +6,7 @@ import * as path from 'path'
 import svgtofont from 'svgtofont'
 import fsExtra from 'fs-extra'
 import { png2svg } from 'svg-png-converter'
+import { optimize } from 'svgo'
 
 const app = express()
 app.use(cors())
@@ -54,15 +55,55 @@ app.post('/png', upload.array('files'), async (req, res) => {
     for (const file of files) {
       let outputBuffer = await png2svg({
         input: fs.readFileSync(`${filePath}/${file}`),
-        tracer: 'potrace',
+        tracer: 'imagetracer',
         optimize: true,
-        numberofcolors: 24,
-        pathomit: 1,
+        noCurveOptimization: true,
+      })
+
+      const result = optimize(outputBuffer.content, {
+        path: `${dicFolder}/${file.split('.')[0]}.svg`,
+        multipass: true,
+        plugins: [
+          'removeDoctype',
+          'removeXMLProcInst',
+          'removeComments',
+          'removeMetadata',
+          'removeEditorsNSData',
+          'cleanupAttrs',
+          'mergeStyles',
+          'inlineStyles',
+          'minifyStyles',
+          'cleanupIDs',
+          'removeUselessDefs',
+          'cleanupNumericValues',
+          'convertColors',
+          'removeUnknownsAndDefaults',
+          'removeNonInheritableGroupAttrs',
+          'removeUselessStrokeAndFill',
+          'removeViewBox',
+          'cleanupEnableBackground',
+          'removeHiddenElems',
+          'removeEmptyText',
+          'convertShapeToPath',
+          'convertEllipseToCircle',
+          'moveElemsAttrsToGroup',
+          'moveGroupAttrsToElems',
+          'collapseGroups',
+          'convertPathData',
+          'convertTransform',
+          'removeEmptyAttrs',
+          'removeEmptyContainers',
+          'mergePaths',
+          'removeUnusedNS',
+          'sortDefsChildren',
+          'removeTitle',
+          'removeDesc',
+        ],
       })
 
       await fs.promises.writeFile(
         `${dicFolder}/${file.split('.')[0]}.svg`,
-        outputBuffer.content
+        result.data
       )
     }
     await svgtofont({
@@ -87,4 +128,4 @@ app.post('/png', upload.array('files'), async (req, res) => {
   }
 })
 
-app.listen(3000)
+app.listen(5000)
