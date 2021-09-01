@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
     return cb(null, path)
   },
   filename: function (req, file, callback) {
-    callback(null, file.originalname)
+    callback(null, file.originalname + '-')
   },
 })
 
@@ -50,6 +50,22 @@ const uploadPng = multer({
 
 app.post('/', uploadSvg.array('files'), async (req, res) => {
   try {
+    var char = 'a'
+    var num = 1
+    const filePath = req.files[0].destination
+    const files = fs
+      .readdirSync(filePath)
+      .sort((n1, n2) => Number(n1.split('.')[0]) - Number(n2.split('.')[0]))
+
+    for (const file of files) {
+      if (num === 9) {
+        char = nextChar(char)
+        num = 1
+      }
+      fs.renameSync(`${filePath}/${file}`, `${filePath}/${char + num}.svg`)
+      num = num + 1
+    }
+
     await svgtofont({
       src: path.resolve(process.cwd(), req.files[0].destination), // svg path
       dist: path.resolve(
@@ -68,6 +84,7 @@ app.post('/', uploadSvg.array('files'), async (req, res) => {
       fsExtra.emptyDirSync('./public')
     })
   } catch (error) {
+    console.log(error)
     res.status(500).json({
       message: 'Something went wrong',
     })
@@ -78,9 +95,13 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
   try {
     const filePath = req.files[0].destination
     const dicFolder = `./public/svg/${req.files[0].destination.split('/')[3]}`
-
+    var char = 'a'
+    var num = 1
     fs.mkdirSync(dicFolder, { recursive: true })
-    const files = await fs.promises.readdir(filePath)
+    const files = fs
+      .readdirSync(filePath)
+      .sort((n1, n2) => Number(n1.split('.')[0]) - Number(n2.split('.')[0]))
+
     for (const file of files) {
       let outputBuffer = await png2svg({
         input: fs.readFileSync(`${filePath}/${file}`),
@@ -89,7 +110,7 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
         noCurveOptimization: true,
       })
 
-      const result = optimize(outputBuffer.content, {
+      const result = await optimize(outputBuffer.content, {
         path: `${dicFolder}/${file.split('.')[0]}.svg`,
         multipass: true,
         plugins: [
@@ -130,11 +151,14 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
         ],
       })
 
-      await fs.promises.writeFile(
-        `${dicFolder}/${file.split('.')[0]}.svg`,
-        result.data
-      )
+      if (num === 9) {
+        char = nextChar(char)
+        num = 1
+      }
+      fs.writeFileSync(`${dicFolder}/${char + num}.svg`, result.data)
+      num = num + 1
     }
+
     await svgtofont({
       src: path.resolve(process.cwd(), dicFolder),
       dist: path.resolve(
@@ -150,7 +174,7 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
       req.files[0].destination.split('/')[3]
     }/font.ttf`
     res.download(file, 'font.ttf', function (err) {
-      fsExtra.emptyDirSync('./public')
+      // fsExtra.emptyDirSync('./public')
     })
   } catch (e) {
     res.status(500).json({
@@ -158,5 +182,8 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
     })
   }
 })
+function nextChar(c) {
+  return String.fromCharCode(c.charCodeAt(0) + 1)
+}
 
-app.listen(3000)
+app.listen(5000)
