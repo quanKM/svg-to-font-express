@@ -1,12 +1,13 @@
-import express from 'express'
-import multer from 'multer'
-import cors from 'cors'
-import fs from 'fs'
 import * as path from 'path'
-import svgtofont from 'svgtofont'
+
+import cors from 'cors'
+import express from 'express'
+import fs from 'fs'
 import fsExtra from 'fs-extra'
-import { png2svg } from 'svg-png-converter'
+import multer from 'multer'
 import { optimize } from 'svgo'
+import { png2svg } from 'svg-png-converter'
+import svgtofont from 'svgtofont'
 
 const app = express()
 app.use(cors())
@@ -48,7 +49,7 @@ const uploadPng = multer({
   },
 })
 
-app.post('/', uploadSvg.array('files'), async (req, res) => {
+app.post('/svg', uploadSvg.array('files'), async (req, res) => {
   try {
     var char = 'a'
     var num = 1
@@ -80,7 +81,7 @@ app.post('/', uploadSvg.array('files'), async (req, res) => {
     const file = `./public/fonts/${
       req.files[0].destination.split('/')[3]
     }/font.ttf`
-    res.download(file, 'font.ttf', function (err) {
+    res.download(file, `${uniqueSuffix}.ttf`, function (err) {
       fsExtra.emptyDirSync('./public')
     })
   } catch (error) {
@@ -173,8 +174,8 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
     const file = `./public/fonts/${
       req.files[0].destination.split('/')[3]
     }/font.ttf`
-    res.download(file, 'font.ttf', function (err) {
-      // fsExtra.emptyDirSync('./public')
+    res.download(file, `${uniqueSuffix}.ttf`, function (err) {
+      fsExtra.emptyDirSync('./public')
     })
   } catch (e) {
     res.status(500).json({
