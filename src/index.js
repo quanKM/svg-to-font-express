@@ -75,7 +75,7 @@ app.post('/svg', uploadSvg.array('files'), async (req, res) => {
       ), // output path
       emptyDist: true,
       startUnicode: 0x0020,
-      fontName: 'font',
+      fontName: uniqueSuffix,
       css: false,
     })
     const file = `./public/fonts/${
@@ -168,7 +168,7 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
       ),
       emptyDist: true,
       startUnicode: 0x0020,
-      fontName: 'font',
+      fontName: uniqueSuffix,
       css: false,
     })
     const file = `./public/fonts/${
