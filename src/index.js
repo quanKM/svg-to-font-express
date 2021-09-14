@@ -66,7 +66,7 @@ app.post('/svg', uploadSvg.array('files'), async (req, res) => {
       fs.renameSync(`${filePath}/${file}`, `${filePath}/${char + num}.svg`)
       num = num + 1
     }
-
+    const fontName = `font-${Date.now()}`
     await svgtofont({
       src: path.resolve(process.cwd(), req.files[0].destination), // svg path
       dist: path.resolve(
@@ -75,12 +75,13 @@ app.post('/svg', uploadSvg.array('files'), async (req, res) => {
       ), // output path
       emptyDist: true,
       startUnicode: 0x0020,
-      fontName: uniqueSuffix,
+      fontName: fontName,
       css: false,
     })
+
     const file = `./public/fonts/${
       req.files[0].destination.split('/')[3]
-    }/font.ttf`
+    }/${fontName}.ttf`
     res.download(file, `${uniqueSuffix}.ttf`, function (err) {
       fsExtra.emptyDirSync('./public')
     })
@@ -159,7 +160,7 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
       fs.writeFileSync(`${dicFolder}/${char + num}.svg`, result.data)
       num = num + 1
     }
-
+    const fontName = `font-${Date.now()}`
     await svgtofont({
       src: path.resolve(process.cwd(), dicFolder),
       dist: path.resolve(
@@ -168,12 +169,12 @@ app.post('/png', uploadPng.array('files'), async (req, res) => {
       ),
       emptyDist: true,
       startUnicode: 0x0020,
-      fontName: uniqueSuffix,
+      fontName: fontName,
       css: false,
     })
     const file = `./public/fonts/${
       req.files[0].destination.split('/')[3]
-    }/font.ttf`
+    }/${fontName}.ttf`
     res.download(file, `${uniqueSuffix}.ttf`, function (err) {
       fsExtra.emptyDirSync('./public')
     })
